@@ -39,3 +39,31 @@ CSTORE_HOST	75.101.185.224
 CSTORE_PORT	4242
 PMR_SERIAL_NUMBERS	HG23030011,HG23080015,HG23080016,HG23350055
 ```
+
+The deployed lambda needs to have a layer configured which contains pynetdicom.
+This will automatically include pydicom.
+```
+$ python3 -m venv lambda_layer
+
+$ source lambda_layer/bin/activate
+
+$ pip install pynetdicom
+  Collecting pynetdicom
+    Using cached pynetdicom-2.0.2-py3-none-any.whl (1.6 MB)
+  Collecting pydicom>=2.2.0
+    Using cached pydicom-2.4.4-py3-none-any.whl (1.8 MB)
+  Installing collected packages: pydicom, pynetdicom
+  Successfully installed pydicom-2.4.4 pynetdicom-2.0.2
+
+$ pip freeze > requirements.txt
+
+$ pip install -r requirements.txt -t ./python
+  Collecting pydicom==2.4.4
+    Using cached pydicom-2.4.4-py3-none-any.whl (1.8 MB)
+  Collecting pynetdicom==2.0.2
+    Using cached pynetdicom-2.0.2-py3-none-any.whl (1.6 MB)
+  Installing collected packages: pydicom, pynetdicom
+  Successfully installed pydicom-2.4.4 pynetdicom-2.0.2
+
+$ zip -r pacs_upload.zip python/
+```
