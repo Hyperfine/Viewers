@@ -1,0 +1,34 @@
+{
+  "Records": [
+    {
+      "eventVersion": "2.1",
+      "eventSource": "aws:s3",
+      "awsRegion": "us-east-1",
+      "eventTime": "2024-06-10T21:36:56.197Z",
+      "eventName": "ObjectCreated:Put",
+      "userIdentity": {
+        "principalId": "AWS:AROASOX33GQ7LE4HMUTFW:sdoyle@hyperfine.io"
+      },
+      "requestParameters": { "sourceIPAddress": "108.7.47.137" },
+      "responseElements": {
+        "x-amz-request-id": "7H92DVPF98WKBK7Y",
+        "x-amz-id-2": "js8Mmfibtff/yf2jXYwn7RGPXxO/cHFSifFNUn0nzykk7L/3XwVV+Rg7nAiTc1R5r4k5x3w4NHjp0WyVwWc/WUlpkO2W48q/"
+      },
+      "s3": {
+        "s3SchemaVersion": "1.0",
+        "configurationId": "7765e8ab-aff3-4f29-bada-e3cb21e032fd",
+        "bucket": {
+          "name": "purview-connector-dev",
+          "ownerIdentity": { "principalId": "AK2WAMW5I485M" },
+          "arn": "arn:aws:s3:::purview-connector-dev"
+        },
+        "object": {
+          "key": "success/1.2.826.0.1.3680043.8.498.96354768784091236236344318806635007089/1.2.826.0.1.3680043.8.498.12487119582374355991269323447035859691.dcm",
+          "size": 1250576,
+          "eTag": "e3c99c5467af7a21918d830bd774b328",
+          "sequencer": "00666771F78F47A984"
+        }
+      }
+    }
+  ]
+}
