@@ -41,10 +41,12 @@ RUN apt-get update && apt-get install -y build-essential python3
 RUN yarn config set workspaces-experimental true
 RUN yarn install
 
-ENV APP_CONFIG=config/docker_openresty-orthanc.js
+ENV APP_CONFIG=config/docker_openresty-orthanc-carepmr.js
 ENV PATH /usr/src/app/node_modules/.bin:$PATH
 
 ENV QUICK_BUILD true
+RUN yarn run cli link-mode ./hyperfine/modes/carepmr/
+RUN yarn run cli link-extension ./hyperfine/extensions/carepmr_panel/
 RUN yarn run build
 
 # ADD . /usr/src/app/

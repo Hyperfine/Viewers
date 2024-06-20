@@ -1,0 +1,6 @@
+
+
+aws configure sso
+aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 169105634366.dkr.ecr.us-east-1.amazonaws.com
+docker image tag carepmr_webapp:latest 169105634366.dkr.ecr.us-east-1.amazonaws.com/carepmr_webapp:latest
+docker push 169105634366.dkr.ecr.us-east-1.amazonaws.com/carepmr_webapp
