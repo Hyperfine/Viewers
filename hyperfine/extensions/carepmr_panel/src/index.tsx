@@ -2,7 +2,8 @@ import { Types } from '@ohif/core';
 //import { PanelMeasurementTableTracking, PanelStudyBrowserTracking } from './panels';
 import i18n from 'i18next';
 import { id } from './id';
-
+import getHangingProtocolModule from './getHangingProtocolModule';
+import React from 'react';
 /**
  * You can remove any of the following modules if you don't need them.
  */
@@ -26,9 +27,9 @@ export default {
    * iconName, iconLabel, label, component} object. Example of a panel module
    * is the StudyBrowserPanel that is provided by the default extension in OHIF.
    */
-  getPanelModule: ({ servicesManager, commandsManager, extensionManager }) => {
-    return <img src="https://i.imgur.com/MK3eW3Am.jpg" alt="Katherine Johnson" />;
-  },
+  getPanelModule: ({ servicesManager, commandsManager, extensionManager }) => {},
+  //   return <img src="https://i.imgur.com/MK3eW3Am.jpg" alt="Katherine Johnson" />;
+  // },
   /**
    * ViewportModule should provide a list of viewports that will be available in OHIF
    * for Modes to consume and use in the viewports. Each viewport is defined by
@@ -66,7 +67,10 @@ export default {
    * { name, protocols}. Examples include the default hanging protocol provided by
    * the default extension that shows 2x2 viewports.
    */
-  getHangingProtocolModule: ({ servicesManager, commandsManager, extensionManager }) => {},
+  // getHangingProtocolModule: ({ servicesManager, commandsManager, extensionManager }) => {
+  //   return getHangingProtocolModule;
+  // },
+  getHangingProtocolModule,
   /**
    * CommandsModule should provide a list of commands that will be available in OHIF
    * for Modes to consume and use in the viewports. Each command is defined by
