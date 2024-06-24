@@ -138,8 +138,8 @@ function modeFactory({ modeConfiguration }) {
     extensions: extensionDependencies,
     /** HangingProtocol used by the mode */
     // hangingProtocol: [''],
-    ///hangingProtocol: 'default',
-    hangingProtocol: ['@ohif/mnGrid'],
+    hangingProtocol: 'actionPMR',
+    //hangingProtocol: ['@ohif/mnGrid'],
     /** SopClassHandlers used by the mode */
     sopClassHandlers: [
       dicomvideo.sopClassHandler,
