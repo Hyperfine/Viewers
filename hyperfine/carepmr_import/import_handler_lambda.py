@@ -5,8 +5,9 @@ from io import BufferedRandom, BytesIO
 import boto3
 from pydicom import dcmread
 from pydicom.dataset import Dataset
-from pynetdicom import AE, StoragePresentationContexts
-
+from dicomweb_client.api import DICOMwebClient
+from dicomweb_client.log import configure_logging
+import requests
 
 root = logging.getLogger()
 if root.handlers:
@@ -18,133 +19,69 @@ logger = logging.getLogger(__name__)
 
 s3 = boto3.client("s3")
 
-ASSOCIATION_TIMEOUT_SECONDS = 10
-DIMSE_TIMEOUT_SECONDS = 20
-
-CSTORE_CALLED_AET = "CSTORE_CALLED_AET"
-CSTORE_CALLING_AET = "CSTORE_CALLING_AET"
-CSTORE_PORT = "CSTORE_PORT"
-CSTORE_HOST = "CSTORE_HOST"
-
-PMR_SERIAL_NUMBERS = "PMR_SERIAL_NUMBERS"
+PMR_SERIAL_NUMBERS = os.getenv('PMR_SERIAL_NUMBERS', "Missing")
+DICOM_WEB_URL = os.getenv("DICOM_WEB_URL", "Missing")
 
 
-def get_serial_number_dictionary():
-    """Returns dictionary of serial numbers which will be pushed
+def get_serial_numbers():
+    """Returns list of serial numbers which will be pushed
     to DICOM target.
     """
-    return os.getenv(PMR_SERIAL_NUMBERS, "").split(",")
+    return PMR_SERIAL_NUMBERS.split(",")
 
 
-def create_association(calling_aet: str, addr: str, port: str, called_aet:str):
-    """Creates DICOM association for sending image.
+def upload_dicom(ds: Dataset, dicomweb_url: str, access_token: str = None) -> str:
+    """Uploads a single DICOM Dataset to the specified dicom-web URL.
+
+    If an access token is specified it is put into HTTP header.
 
     Args:
-        calling_aet (str): DICOM Calling AE title
-        addr (str): DICOM CSTORE SCP hostname
-        port (str): DICOM CSTORE SCP port
-        called_aet (str): DICOM Called AE title
+        ds (Dataset): Any valid DICOM object
+        dicomweb_url (str): http/https url to the dicom-web service.
+        access_token (str): Security token for accessing the URL.
 
     Raises:
-        err: If connection fails
+        RuntimeError: _description_
+
 
     Returns:
-        _type_: DICOM association to specified server.
+        str: SOPInstanceUID of input dataset returned by the server.
     """
-    logger.info(
-        f"Creating DIMSE Association {calling_aet}, {called_aet}, {addr}, {port}"
-    )
-    ae = AE(ae_title=calling_aet)
-    ae.connection_timeout = ASSOCIATION_TIMEOUT_SECONDS
-    ae.network_timeout = ASSOCIATION_TIMEOUT_SECONDS
-    ae.requested_contexts = StoragePresentationContexts
-
-    # Request association with remote
-    ae.dimse_timeout = DIMSE_TIMEOUT_SECONDS
-
-    try:
-        assoc = ae.associate(addr=addr, port=port, ae_title=called_aet)
-    except Exception as err:
-        logger.error(err)
-        raise err
-
-    return assoc
-
-
-def send_dataset(dataset: Dataset, assoc) -> Dataset:
-    """Sends DICOM object over specified DICOM association.
-    Limited to a single DICOM object in the transaction.
-
-    Args:
-        dataset (Dataset): DICOM object to be CSTOREd
-        assoc (_type_): DICOM association
-
-    Returns:
-        Dataset: pydicom dataset containing status information
-    """
-    status = assoc.send_c_store(dataset)
-    assoc.release()
-    return status
-
-
-def cstore(dataset, *, calling_aet, addr, port, called_aet):
-    """CSTORE specified dataset to specified DICOM target
-
-    Args:
-        dataset (str): DICOM Object
-        calling_aet (str): DICOM Calling AE title
-        addr (str): DICOM CSTORE SCP hostname
-        port (str): DICOM CSTORE SCP port
-        called_aet (str): DICOM Called AE title
-
-    Returns:
-        Dataset: Dataset containing Status information
-    """
-
-    if not addr:
-        raise RuntimeError("No server address specified")
-    if port < 1:
-        raise RuntimeError(f"Invalid DICOM port {port}")
-    if not called_aet:
-        raise RuntimeError("No CALLED AET specified")
-    if not calling_aet:
-        raise RuntimeError("No CALLING AET specified")
-    assoc = create_association(calling_aet, addr, port, called_aet)
-
-    if assoc.is_established:
-        logger.info("Associate connection is established for c-store")
-        return send_dataset(dataset, assoc)
+    if access_token:
+        client = DICOMwebClient(
+            url=dicomweb_url,
+            headers={"Authorization": "Bearer {}".format(access_token)}
+        )
     else:
-        logger.error(
-            f"Associate connection is NOT established for c-store {assoc}"
-        )
+        client = DICOMwebClient(url=dicomweb_url)
+
+    # The result is a DICOM object containing fields
+    # defined by table 6.6.1-2:
+    # https://dicom.nema.org/dicom/2013/output/chtml/part18/sect_6.6.html#table_6.6.1-2
+    result = client.store_instances(datasets=[ds])
+
+    if not result:
+        raise RuntimeError("Store instances returned null")
+
+    warning_message = result.get('WarningReason', None)
+    if warning_message:
+        logger.warn(f'Warning {warning_message} for upload {ds.SOPInstanceUID}')
+    failed_transfers = result.FailedSOPSequence
+    if len(failed_transfers) > 0:
+        reason = result.get('FailureReason', "")
         raise RuntimeError(
-            f"DICOM association failed {calling_aet} {addr} {port} {called_aet}"
+            f"Failed STOW-RS uploads {failed_transfers} {reason}")
+    successful_transfers = result.ReferencedSOPSequence
+    if len(successful_transfers) == 0:
+        raise RuntimeError("There were no successful transfers")
+
+    elif len(successful_transfers) != 1:
+        raise RuntimeError(
+            f"Expected only one transfer, not {len(successful_transfers)}"
         )
+    sop_instance_uid = successful_transfers[0].ReferencedSOPInstanceUID
 
-
-def cstore_study(ds: Dataset) -> Dataset:
-    """Transmits DICOM dataset to server SCP
-    destination defined by environment variables.
-
-    Args:
-        ds (Dataset): DICOM Object
-
-    Returns:
-        Dataset: DICOM object containing status information
-    """
-    called_aet = os.getenv(CSTORE_CALLED_AET, None)
-    calling_aet = os.getenv(CSTORE_CALLING_AET, None)
-    cstore_port = int(os.getenv(CSTORE_PORT, 0))
-    cstore_host = os.getenv(CSTORE_HOST, None)
-    result = cstore(
-        ds,
-        calling_aet=calling_aet,
-        called_aet=called_aet,
-        addr=cstore_host,
-        port=cstore_port,
-    )
-    return result
+    return sop_instance_uid
 
 
 def read_dcm_from_memory(in_memory_file: BufferedRandom) -> Dataset:
@@ -189,8 +126,19 @@ def get_dicom_from_event(s3_client, event) -> Dataset:
 
 
 def is_carepmr_image(ds: Dataset) -> bool:
+    """Returns True if the object should be forwarded to
+    the CarePMR PACS; otherwise False.
+
+    Args:
+        ds (Dataset): Candidate DICOM object
+
+    Returns:
+        bool: True if the object's device serial number
+        matches one of the serial numbers specified
+        in an environment variable.
+    """
     serial_number = ds.DeviceSerialNumber
-    serial_number_dictionary = get_serial_number_dictionary()
+    serial_number_dictionary = get_serial_numbers()
     if serial_number in serial_number_dictionary:
         return True
     else:
@@ -208,7 +156,7 @@ def lambda_handler(event, context):
         if is_carepmr_image(ds):
             logger.info("Match - this is a CarePMR study")
             care_pmr_study = True
-            result = cstore_study(ds)
+            result = upload_dicom(ds)
             logger.info(f"cstore resul {result.Status}")
             return str(result.Status)
         else:
@@ -216,10 +164,25 @@ def lambda_handler(event, context):
 
         return str(care_pmr_study)
     except Exception as e:
-        print(e)
-        print(
+        logger.exception(e)
+        bucket = event["Records"][0]["s3"]["bucket"]["name"]
+        key = urllib.parse.unquote_plus(
+            event["Records"][0]["s3"]["object"]["key"], encoding="utf-8")
+        logger.error(
             "Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.".format(
                 key, bucket
             )
         )
         raise e
+
+
+if __name__ == "__main__":  # For testing only
+    configure_logging(4)
+    token = get_token()
+    filename = "tests/data/2.25.127421887010676750942174422891255180378.dcm"
+    #filename = "tests/data/1.3.6.1.4.1.5962.99.1.2256093408.737520867.1651523567840.64.0.dcm"
+    ds = dcmread(filename)
+    server_url = "https://pacs-server.dev-sean.hyperfine-research-dev.com/pacs/dicom-web"
+    #server_url = "http://127.0.0.1/pacs/dicom-web"
+    status = upload_dicom(ds, server_url, token)
+    print(status)
