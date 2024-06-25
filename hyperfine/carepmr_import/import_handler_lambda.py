@@ -156,7 +156,7 @@ def lambda_handler(event, context):
         if is_carepmr_image(ds):
             logger.info("Match - this is a CarePMR study")
             care_pmr_study = True
-            result = upload_dicom(ds)
+            result = upload_dicom(ds, DICOM_WEB_URL)
             logger.info(f"cstore resul {result.Status}")
             return str(result.Status)
         else:
@@ -169,7 +169,7 @@ def lambda_handler(event, context):
         key = urllib.parse.unquote_plus(
             event["Records"][0]["s3"]["object"]["key"], encoding="utf-8")
         logger.error(
-            "Error getting object {} from bucket {}. Make sure they exist and your bucket is in the same region as this function.".format(
+            "Error uploading object {} from bucket {} to PACS.".format(
                 key, bucket
             )
         )
