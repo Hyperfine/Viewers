@@ -4,6 +4,7 @@ import i18n from 'i18next';
 import { id } from './id';
 import getHangingProtocolModule from './getHangingProtocolModule';
 import React from 'react';
+import getPanelModule from './getPanelModule';
 /**
  * You can remove any of the following modules if you don't need them.
  */
@@ -27,7 +28,7 @@ export default {
    * iconName, iconLabel, label, component} object. Example of a panel module
    * is the StudyBrowserPanel that is provided by the default extension in OHIF.
    */
-  getPanelModule: ({ servicesManager, commandsManager, extensionManager }) => {},
+  getPanelModule: getPanelModule,
   //   return <img src="https://i.imgur.com/MK3eW3Am.jpg" alt="Katherine Johnson" />;
   // },
   /**
