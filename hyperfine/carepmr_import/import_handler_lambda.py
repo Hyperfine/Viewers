@@ -152,17 +152,19 @@ def lambda_handler(event, context):
         ds = get_dicom_from_event(s3, event)
         serial_number = ds.DeviceSerialNumber
         logger.info(f"DeviceSerialNumber = {serial_number}")
-        care_pmr_study = False
+
         if is_carepmr_image(ds):
             logger.info("Match - this is a CarePMR study")
-            care_pmr_study = True
             result = upload_dicom(ds, DICOM_WEB_URL)
-            logger.info(f"cstore resul {result.Status}")
-            return str(result.Status)
+            if not result:
+                logger.error("upload_dicom failed")
+                return None
+            else:
+                return {'SOPInstanceUID': result}
         else:
             logger.info("This is not a CarePMR study")
+            return None
 
-        return str(care_pmr_study)
     except Exception as e:
         logger.exception(e)
         bucket = event["Records"][0]["s3"]["bucket"]["name"]
@@ -174,6 +176,7 @@ def lambda_handler(event, context):
             )
         )
         raise e
+    return None
 
 
 if __name__ == "__main__":  # For testing only
