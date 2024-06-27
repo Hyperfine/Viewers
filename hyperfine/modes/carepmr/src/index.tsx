@@ -1,14 +1,17 @@
 import { hotkeys } from '@ohif/core';
-import { initToolGroups, toolbarButtons } from '@ohif/mode-longitudinal';
+//import { initToolGroups, toolbarButtons } from '@ohif/mode-longitudinal';
+import { initToolGroups } from '@ohif/mode-longitudinal';
 import { id } from './id';
+import { HangingProtocolService } from '@ohif/core/src/services';
+import toolbarButtons from './toolbarButtons.ts';
 
 const ohif = {
   layout: '@ohif/extension-default.layoutTemplateModule.viewerLayout',
   sopClassHandler: '@ohif/extension-default.sopClassHandlerModule.stack',
   hangingProtocol: '@ohif/extension-default.hangingProtocolModule.default',
   leftPanel: '@ohif/extension-default.panelModule.seriesList',
-  rightPanel: '@ohif/extension-default.panelModule.measure',
-  //rightPanel: 'carepmr_panel',
+  //rightPanel: '@ohif/extension-default.panelModule.measure',
+  rightPanel: 'carepmr_panel.panelModule.demographics',
 };
 const cs3d = {
   viewport: '@ohif/extension-cornerstone.viewportModule.cornerstone',
@@ -35,6 +38,7 @@ const extensionDependencies = {
   '@ohif/extension-cornerstone-dicom-sr': '^3.0.0',
   '@ohif/extension-dicom-pdf': '^3.0.1',
   '@ohif/extension-dicom-video': '^3.0.1',
+  carepmr_panel: '^0.0.1',
 };
 function modeFactory({ modeConfiguration }) {
   return {
@@ -54,7 +58,13 @@ function modeFactory({ modeConfiguration }) {
      * Services and other resources.
      */
     onModeEnter: ({ servicesManager, extensionManager, commandsManager }: withAppTypes) => {
-      const { measurementService, toolbarService, toolGroupService } = servicesManager.services;
+      const {
+        measurementService,
+        toolbarService,
+        toolGroupService,
+        //customizationService,
+        hangingProtocolService,
+      } = servicesManager.services;
 
       measurementService.clearMeasurements();
 
@@ -67,11 +77,15 @@ function modeFactory({ modeConfiguration }) {
         'Zoom',
         'WindowLevel',
         'Pan',
-        'Capture',
         'Layout',
         'Crosshairs',
         'MoreTools',
       ]);
+      // hangingProtocolService.addCustomAttribute(
+      //   'timepoint',
+      //   'timepoint',
+      //   metaData => 'timepoint3' //getFirstMeasurementSeriesInstanceUID(metaData)
+      // );
     },
     onModeExit: ({ servicesManager }: withAppTypes) => {
       const {
@@ -138,8 +152,8 @@ function modeFactory({ modeConfiguration }) {
     extensions: extensionDependencies,
     /** HangingProtocol used by the mode */
     // hangingProtocol: [''],
-    hangingProtocol: 'actionPMR',
-    //hangingProtocol: ['@ohif/mnGrid'],
+    //hangingProtocol: 'actionPMR',
+    hangingProtocol: ['@ohif/mnGrid'],
     /** SopClassHandlers used by the mode */
     sopClassHandlers: [
       dicomvideo.sopClassHandler,

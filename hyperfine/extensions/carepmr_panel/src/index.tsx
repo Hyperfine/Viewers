@@ -5,6 +5,7 @@ import { id } from './id';
 import getHangingProtocolModule from './getHangingProtocolModule';
 import React from 'react';
 import getPanelModule from './getPanelModule';
+//import getToolbarModule from './getToolbarModule';
 /**
  * You can remove any of the following modules if you don't need them.
  */
@@ -28,7 +29,7 @@ export default {
    * iconName, iconLabel, label, component} object. Example of a panel module
    * is the StudyBrowserPanel that is provided by the default extension in OHIF.
    */
-  getPanelModule: getPanelModule,
+  getPanelModule,
   //   return <img src="https://i.imgur.com/MK3eW3Am.jpg" alt="Katherine Johnson" />;
   // },
   /**
@@ -44,6 +45,7 @@ export default {
    * {name, defaultComponent, clickHandler }. Examples include radioGroupIcons and
    * splitButton toolButton that the default extension is providing.
    */
+  //getToolbarModule, // This is a no-op - set in mode.
   getToolbarModule: ({ servicesManager, commandsManager, extensionManager }) => {},
   /**
    * LayoutTemplateMOdule should provide a list of layout templates that will be
@@ -68,10 +70,8 @@ export default {
    * { name, protocols}. Examples include the default hanging protocol provided by
    * the default extension that shows 2x2 viewports.
    */
-  // getHangingProtocolModule: ({ servicesManager, commandsManager, extensionManager }) => {
-  //   return getHangingProtocolModule;
-  // },
-  getHangingProtocolModule,
+  getHangingProtocolModule: ({ servicesManager, commandsManager, extensionManager }) => {},
+  //getHangingProtocolModule,
   /**
    * CommandsModule should provide a list of commands that will be available in OHIF
    * for Modes to consume and use in the viewports. Each command is defined by
