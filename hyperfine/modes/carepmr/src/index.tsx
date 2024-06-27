@@ -8,7 +8,8 @@ import toolbarButtons from './toolbarButtons.ts';
 const ohif = {
   layout: '@ohif/extension-default.layoutTemplateModule.viewerLayout',
   sopClassHandler: '@ohif/extension-default.sopClassHandlerModule.stack',
-  hangingProtocol: '@ohif/extension-default.hangingProtocolModule.default',
+  //hangingProtocol: '@ohif/extension-default.hangingProtocolModule.default',
+  hangingProtocol: 'carepmr_panel.hangingProtocolModule.carepmr_hp',
   leftPanel: '@ohif/extension-default.panelModule.seriesList',
   //rightPanel: '@ohif/extension-default.panelModule.measure',
   rightPanel: 'carepmr_panel.panelModule.demographics',
@@ -152,8 +153,8 @@ function modeFactory({ modeConfiguration }) {
     extensions: extensionDependencies,
     /** HangingProtocol used by the mode */
     // hangingProtocol: [''],
-    //hangingProtocol: 'actionPMR',
-    hangingProtocol: ['@ohif/mnGrid'],
+    hangingProtocol: ['carepmr_hp'],
+    //hangingProtocol: ['@ohif/mnGrid'],
     /** SopClassHandlers used by the mode */
     sopClassHandlers: [
       dicomvideo.sopClassHandler,

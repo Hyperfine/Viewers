@@ -70,8 +70,8 @@ export default {
    * { name, protocols}. Examples include the default hanging protocol provided by
    * the default extension that shows 2x2 viewports.
    */
-  getHangingProtocolModule: ({ servicesManager, commandsManager, extensionManager }) => {},
-  //getHangingProtocolModule,
+  //getHangingProtocolModule: ({ servicesManager, commandsManager, extensionManager }) => {},
+  getHangingProtocolModule,
   /**
    * CommandsModule should provide a list of commands that will be available in OHIF
    * for Modes to consume and use in the viewports. Each command is defined by

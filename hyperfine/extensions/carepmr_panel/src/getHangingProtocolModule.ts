@@ -1,49 +1,16 @@
-import {
-  // mrAXIAL_FLAIR,
-  // mrAXIAL_T1,
-  // mrAXIAL_T2,
-  // mrSAGITTAL_T1,
-  t1_mrAXIAL_FLAIR,
-  t1_mrAXIAL_T1,
-  t2_mrAXIAL_FLAIR,
-  t2_mrAXIAL_T1,
-  t3_mrAXIAL_FLAIR,
-  t3_mrAXIAL_T1,
-} from './HangingProtocols/hangingProtocolViewports';
-import React from 'react';
+import { Types } from '@ohif/core';
 
-/**
- * 2x2 Layout.
- */
-const two_by_three = {
-  name: 'default',
-  viewportStructure: {
-    layoutType: 'grid',
-    properties: {
-      rows: 2,
-      columns: 3,
-    },
-  },
-  viewports: [
-    t1_mrAXIAL_FLAIR,
-    t2_mrAXIAL_FLAIR,
-    t3_mrAXIAL_FLAIR,
-    t1_mrAXIAL_T1,
-    t2_mrAXIAL_T1,
-    t3_mrAXIAL_T1,
-  ],
-};
-
-const actionPMR = {
-  id: 'actionPMR',
+const oneByThreeProtocol: Types.HangingProtocol.Protocol = {
+  id: 'carepmr_hp',
+  description: 'Prototype carepmr',
   locked: true,
-  name: 'Default',
+  name: 'carepmr_hp',
   createdDate: '2021-02-23T19:22:08.894Z',
   modifiedDate: '2022-10-04T19:22:08.894Z',
   availableTo: {},
   editableBy: {},
+  imageLoadStrategy: 'interleaveTopToBottom',
   toolGroupIds: ['default'],
-  imageLoadStrategy: 'interleaveTopToBottom', // "default" , "interleaveTopToBottom",  "interleaveCenter"
   protocolMatchingRules: [
     {
       attribute: 'ModalitiesInStudy',
@@ -53,9 +20,10 @@ const actionPMR = {
     },
   ],
   displaySetSelectors: {
-    t1_flairDisplaySet: {
+    mrDisplaySet: {
       seriesMatchingRules: [
         {
+          weight: 1,
           attribute: 'Modality',
           constraint: {
             equals: {
@@ -63,162 +31,189 @@ const actionPMR = {
             },
           },
           required: true,
-        },
-        {
-          attribute: 'SeriesDescription',
-          constraint: {
-            contains: 'FLAIR',
-          },
-        },
-        {
-          attribute: 'timepoint',
-          constraint: {
-            contains: 'timepoint1',
-          },
-        },
-      ],
-    },
-
-    t2_flairDisplaySet: {
-      seriesMatchingRules: [
-        {
-          attribute: 'Modality',
-          constraint: {
-            equals: {
-              value: 'MR',
-            },
-          },
-          required: true,
-        },
-        {
-          attribute: 'SeriesDescription',
-          constraint: {
-            contains: 'FLAIR',
-          },
         },
         // {
-        //   attribute: 'timepoint',
+        //   weight: 1,
+        //   attribute: 'isReconstructable',
         //   constraint: {
-        //     contains: 'timepoint2',
+        //     equals: {
+        //       value: true,
+        //     },
         //   },
+        //   required: true,
         // },
       ],
     },
-    t3_flairDisplaySet: {
-      seriesMatchingRules: [
-        {
-          attribute: 'Modality',
-          constraint: {
-            equals: {
-              value: 'MR',
-            },
-          },
-          required: true,
-        },
-        {
-          attribute: 'SeriesDescription',
-          constraint: {
-            contains: 'FLAIR',
-          },
-        },
-        // {
-        //   attribute: 'timepoint',
-        //   constraint: {
-        //     contains: 'timepoint3',
-        //   },
-        // },
-      ],
-    },
-
-    t1_t1DisplaySet: {
-      seriesMatchingRules: [
-        {
-          attribute: 'Modality',
-          constraint: {
-            equals: {
-              value: 'MR',
-            },
-          },
-          required: true,
-        },
-        {
-          attribute: 'SeriesDescription',
-          constraint: {
-            contains: 'T1',
-          },
-        },
-        // {
-        //   attribute: 'timepoint',
-        //   constraint: {
-        //     contains: 'timepoint1',
-        //   },
-        // },
-      ],
-    },
-
-    t2_t1DisplaySet: {
-      seriesMatchingRules: [
-        {
-          attribute: 'Modality',
-          constraint: {
-            equals: {
-              value: 'MR',
-            },
-          },
-          required: true,
-        },
-        {
-          attribute: 'SeriesDescription',
-          constraint: {
-            contains: 'T1',
-          },
-        },
-        // {
-        //   attribute: 'timepoint',
-        //   constraint: {
-        //     contains: 'timepoint2',
-        //   },
-        // },
-      ],
-    },
-
-    t3_t1DisplaySet: {
-      seriesMatchingRules: [
-        {
-          attribute: 'Modality',
-          constraint: {
-            equals: {
-              value: 'MR',
-            },
-          },
-          required: true,
-        },
-        {
-          attribute: 'SeriesDescription',
-          constraint: {
-            contains: 'T1',
-          },
-        },
-        // {
-        //   attribute: 'timepoint',
-        //   constraint: {
-        //     contains: 'timepoint3',
-        //   },
-        // },
-      ],
-    },
+    // ptDisplaySet: {
+    //   seriesMatchingRules: [
+    //     {
+    //       attribute: 'Modality',
+    //       constraint: {
+    //         equals: 'MR',
+    //       },
+    //       required: true,
+    //     },
+    //     {
+    //       weight: 1,
+    //       attribute: 'isReconstructable',
+    //       constraint: {
+    //         equals: {
+    //           value: true,
+    //         },
+    //       },
+    //       required: true,
+    //     },
+    //     {
+    //       attribute: 'SeriesDescription',
+    //       constraint: {
+    //         contains: 'Corrected',
+    //       },
+    //     },
+    //   ],
+    // },
   },
-
-  //stages: [stage1, stage2, stage3, stage4],
-  stages: [two_by_three],
-  numberOfPriorsReferenced: 2,
+  stages: [
+    {
+      id: 'hYbmMy3b7pz7GLiaT',
+      name: 'default',
+      viewportStructure: {
+        layoutType: 'grid',
+        properties: {
+          rows: 1,
+          columns: 3,
+        },
+      },
+      viewports: [
+        {
+          viewportOptions: {
+            viewportId: 'mr1',
+            viewportType: 'volume',
+            orientation: 'axial',
+            initialImageOptions: {
+              preset: 'middle',
+            },
+            syncGroups: [
+              {
+                type: 'voi',
+                id: 'ctWLSync',
+                source: true,
+                target: true,
+              },
+            ],
+          },
+          displaySets: [
+            {
+              id: 'mrDisplaySet',
+            },
+          ],
+        },
+        {
+          viewportOptions: {
+            viewportId: 'mr2',
+            viewportType: 'volume',
+            orientation: 'axial',
+            initialImageOptions: {
+              preset: 'middle',
+            },
+            syncGroups: [
+              {
+                type: 'voi',
+                id: 'ctWLSync',
+                source: true,
+                target: true,
+              },
+            ],
+          },
+          displaySets: [
+            {
+              id: 'mrDisplaySet',
+            },
+          ],
+        },
+        {
+          viewportOptions: {
+            viewportId: 'mr3',
+            viewportType: 'volume',
+            orientation: 'axial',
+            initialImageOptions: {
+              preset: 'middle',
+            },
+            syncGroups: [
+              {
+                type: 'voi',
+                id: 'ctWLSync',
+                source: true,
+                target: true,
+              },
+            ],
+          },
+          displaySets: [
+            {
+              id: 'mrDisplaySet',
+            },
+          ],
+        },
+        // {
+        //   viewportOptions: {
+        //     viewportId: 'ptAXIAL',
+        //     viewportType: 'volume',
+        //     orientation: 'sagittal',
+        //     initialImageOptions: {
+        //       preset: 'middle',
+        //     },
+        //   },
+        //   displaySets: [
+        //     {
+        //       id: 'ptDisplaySet',
+        //     },
+        //   ],
+        // },
+        // {
+        //   viewportOptions: {
+        //     viewportId: 'fusionSAGITTAL',
+        //     viewportType: 'volume',
+        //     orientation: 'sagittal',
+        //     initialImageOptions: {
+        //       preset: 'middle',
+        //     },
+        //     syncGroups: [
+        //       {
+        //         type: 'voi',
+        //         id: 'ctWLSync',
+        //         source: false,
+        //         target: true,
+        //       },
+        //     ],
+        //   },
+        //   displaySets: [
+        //     {
+        //       id: 'ctDisplaySet',
+        //     },
+        //     {
+        //       options: {
+        //         colormap: 'hsv',
+        //         voi: {
+        //           windowWidth: 5,
+        //           windowCenter: 2.5,
+        //         },
+        //       },
+        //       id: 'ptDisplaySet',
+        //     },
+        //   ],
+        // },
+      ],
+      createdDate: '2021-02-23T18:32:42.850Z',
+    },
+  ],
+  numberOfPriorsReferenced: -1,
 };
 
 function getHangingProtocolModule() {
   return [
     {
-      name: actionPMR.id,
-      protocol: actionPMR,
+      id: oneByThreeProtocol.id,
+      name: oneByThreeProtocol.name,
+      protocol: oneByThreeProtocol,
     },
   ];
 }
