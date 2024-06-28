@@ -20,7 +20,7 @@ const oneByThreeProtocol: Types.HangingProtocol.Protocol = {
     },
   ],
   displaySetSelectors: {
-    mrDisplaySet: {
+    flair_Displayset: {
       seriesMatchingRules: [
         {
           weight: 1,
@@ -32,49 +32,78 @@ const oneByThreeProtocol: Types.HangingProtocol.Protocol = {
           },
           required: true,
         },
-        // {
-        //   weight: 1,
-        //   attribute: 'isReconstructable',
-        //   constraint: {
-        //     equals: {
-        //       value: true,
-        //     },
-        //   },
-        //   required: true,
-        // },
+        {
+          attribute: 'SeriesDescription',
+          constraint: {
+            contains: 'FLAIR',
+          },
+        },
+        {
+          attribute: 'ClinicalTrialTimePointID',
+          constraint: {
+            equals: 'timepoint1',
+          },
+        },
       ],
     },
-    // ptDisplaySet: {
-    //   seriesMatchingRules: [
-    //     {
-    //       attribute: 'Modality',
-    //       constraint: {
-    //         equals: 'MR',
-    //       },
-    //       required: true,
-    //     },
-    //     {
-    //       weight: 1,
-    //       attribute: 'isReconstructable',
-    //       constraint: {
-    //         equals: {
-    //           value: true,
-    //         },
-    //       },
-    //       required: true,
-    //     },
-    //     {
-    //       attribute: 'SeriesDescription',
-    //       constraint: {
-    //         contains: 'Corrected',
-    //       },
-    //     },
-    //   ],
-    // },
+    t1_Displayset: {
+      seriesMatchingRules: [
+        {
+          weight: 1,
+          attribute: 'Modality',
+          constraint: {
+            equals: {
+              value: 'MR',
+            },
+          },
+          required: true,
+        },
+        {
+          attribute: 'SeriesDescription',
+          constraint: {
+            contains: 'T1',
+          },
+        },
+        {
+          attribute: 'ClinicalTrialTimePointID',
+          constraint: {
+            equals: 'timepoint2',
+          },
+          required: false,
+        },
+      ],
+    },
+    t2_Displayset: {
+      seriesMatchingRules: [
+        {
+          weight: 1,
+          attribute: 'Modality',
+          constraint: {
+            equals: {
+              value: 'MR',
+            },
+          },
+          required: true,
+        },
+        {
+          attribute: 'SeriesDescription',
+          constraint: {
+            contains: 'T2',
+          },
+        },
+        {
+          attribute: 'ClinicalTrialTimePointID',
+          constraint: {
+            equals: 'timepoint3',
+          },
+          required: true,
+        },
+      ],
+    },
   },
   stages: [
     {
-      id: 'hYbmMy3b7pz7GLiaT',
+      id: 'three_studies',
       name: 'default',
       viewportStructure: {
         layoutType: 'grid',
@@ -103,7 +132,7 @@ const oneByThreeProtocol: Types.HangingProtocol.Protocol = {
           },
           displaySets: [
             {
-              id: 'mrDisplaySet',
+              id: 'flair_Displayset',
             },
           ],
         },
@@ -126,7 +155,7 @@ const oneByThreeProtocol: Types.HangingProtocol.Protocol = {
           },
           displaySets: [
             {
-              id: 'mrDisplaySet',
+              id: 't1_Displayset',
             },
           ],
         },
@@ -149,63 +178,15 @@ const oneByThreeProtocol: Types.HangingProtocol.Protocol = {
           },
           displaySets: [
             {
-              id: 'mrDisplaySet',
+              id: 't2_Displayset',
             },
           ],
         },
-        // {
-        //   viewportOptions: {
-        //     viewportId: 'ptAXIAL',
-        //     viewportType: 'volume',
-        //     orientation: 'sagittal',
-        //     initialImageOptions: {
-        //       preset: 'middle',
-        //     },
-        //   },
-        //   displaySets: [
-        //     {
-        //       id: 'ptDisplaySet',
-        //     },
-        //   ],
-        // },
-        // {
-        //   viewportOptions: {
-        //     viewportId: 'fusionSAGITTAL',
-        //     viewportType: 'volume',
-        //     orientation: 'sagittal',
-        //     initialImageOptions: {
-        //       preset: 'middle',
-        //     },
-        //     syncGroups: [
-        //       {
-        //         type: 'voi',
-        //         id: 'ctWLSync',
-        //         source: false,
-        //         target: true,
-        //       },
-        //     ],
-        //   },
-        //   displaySets: [
-        //     {
-        //       id: 'ctDisplaySet',
-        //     },
-        //     {
-        //       options: {
-        //         colormap: 'hsv',
-        //         voi: {
-        //           windowWidth: 5,
-        //           windowCenter: 2.5,
-        //         },
-        //       },
-        //       id: 'ptDisplaySet',
-        //     },
-        //   ],
-        // },
       ],
       createdDate: '2021-02-23T18:32:42.850Z',
     },
   ],
-  numberOfPriorsReferenced: -1,
+  numberOfPriorsReferenced: 2,
 };
 
 function getHangingProtocolModule() {

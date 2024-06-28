@@ -2,9 +2,25 @@ import { Types } from '@ohif/core';
 //import { PanelMeasurementTableTracking, PanelStudyBrowserTracking } from './panels';
 import i18n from 'i18next';
 import { id } from './id';
-import getHangingProtocolModule from './getHangingProtocolModule';
+import { HangingProtocolService } from '@ohif/core/src/services';
+import getHangingProtocolModule from './HangingProtocols/getHangingProtocolModule';
+import registerHangingProtocolAttributes from './HangingProtocols/registerHangingProtocolAttributes';
 import React from 'react';
 import getPanelModule from './getPanelModule';
+//import preRegistration from './init';
+/*
+export default function init({
+  servicesManager,
+  configuration = {},
+  commandsManager,
+}: withAppTypes): void {
+  const { stateSyncService, toolbarService, cineService, viewportGridService } =
+    servicesManager.services;
+
+  registerHangingProtocolAttributes({ servicesManager });
+}
+
+*/
 //import getToolbarModule from './getToolbarModule';
 /**
  * You can remove any of the following modules if you don't need them.
@@ -22,7 +38,27 @@ export default {
    * (e.g. cornerstone, cornerstoneTools, ...) or registering any services that
    * this extension is providing.
    */
-  preRegistration: ({ servicesManager, commandsManager, configuration = {} }) => {},
+  /**
+   * Register the Cornerstone 3D services and set them up for use.
+   *
+   * @param configuration.csToolsConfig - Passed directly to `initCornerstoneTools`
+   */
+  preRegistration: function (props: Types.Extensions.ExtensionParams): Promise<void> {
+    const { servicesManager, serviceProvidersManager } = props;
+    //servicesManager.registerService(CornerstoneViewportService.REGISTRATION);
+
+    // serviceProvidersManager.registerProvider(
+    //   ViewportActionCornersService.REGISTRATION.name,
+    //   ViewportActionCornersProvider
+    // );
+    console.log('Here in preRegistration');
+    const hp = HangingProtocolService;
+    console.log(servicesManager);
+    //return init.call(this, props);
+    //return init(serviceProvidersManager);
+    // TODO: This seems to be the core of the problem. It's not initializing
+    registerHangingProtocolAttributes(servicesManager);
+  },
   /**
    * PanelModule should provide a list of panels that will be available in OHIF
    * for Modes to consume and render. Each panel is defined by a {name,
