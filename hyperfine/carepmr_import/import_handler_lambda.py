@@ -1,3 +1,4 @@
+# Lambda function for uploading DICOM files from S3 to dicom-web target
 import logging
 import os
 import urllib.parse
@@ -7,7 +8,6 @@ import uuid
 from typing import Dict
 from pydicom import dcmread
 from pydicom.dataset import Dataset
-import json
 import requests
 
 
