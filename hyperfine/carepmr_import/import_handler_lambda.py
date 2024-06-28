@@ -3,24 +3,34 @@ import os
 import urllib.parse
 from io import BufferedRandom, BytesIO
 import boto3
+import uuid
+from typing import Dict
 from pydicom import dcmread
 from pydicom.dataset import Dataset
-from dicomweb_client.api import DICOMwebClient
-from dicomweb_client.log import configure_logging
+import json
 import requests
+
 
 root = logging.getLogger()
 if root.handlers:
     for handler in root.handlers:
         root.removeHandler(handler)
 logging.basicConfig(format="%(asctime)s %(message)s", level=logging.INFO)
-
 logger = logging.getLogger(__name__)
+
+# log = logging.getLogger("urllib3")
+# log.setLevel(logging.DEBUG)
+
 
 s3 = boto3.client("s3")
 
-PMR_SERIAL_NUMBERS = os.getenv('PMR_SERIAL_NUMBERS', "Missing")
+PMR_SERIAL_NUMBERS = os.getenv("PMR_SERIAL_NUMBERS", "Missing")
 DICOM_WEB_URL = os.getenv("DICOM_WEB_URL", "Missing")
+
+DICOM_RETREIVE_URL_TAG = "00081190"
+DICOM_REFERENCED_SOP_SEQUENCE_TAG = "00081199"
+DICOM_REFERENCED_SOP_CLASS_UID_TAG = "00081150"
+DICOM_REFERENCED_SOP_INSTANCE_UID_TAG = "00081155"
 
 
 def get_serial_numbers():
@@ -47,42 +57,63 @@ def upload_dicom(ds: Dataset, dicomweb_url: str, access_token: str = None) -> st
     Returns:
         str: SOPInstanceUID of input dataset returned by the server.
     """
-    if access_token:
-        client = DICOMwebClient(
-            url=dicomweb_url,
-            headers={"Authorization": "Bearer {}".format(access_token)}
-        )
-    else:
-        client = DICOMwebClient(url=dicomweb_url)
 
-    # The result is a DICOM object containing fields
-    # defined by table 6.6.1-2:
-    # https://dicom.nema.org/dicom/2013/output/chtml/part18/sect_6.6.html#table_6.6.1-2
-    result = client.store_instances(datasets=[ds])
+    boundary = str(uuid.uuid4())  # The boundary is a random UUID
+    body = bytearray()
 
-    if not result:
-        raise RuntimeError("Store instances returned null")
+    with BytesIO() as buffer:
 
-    warning_message = result.get('WarningReason', None)
-    if warning_message:
-        logger.warn(f'Warning {warning_message} for upload {ds.SOPInstanceUID}')
-    failed_transfers = result.FailedSOPSequence
-    if len(failed_transfers) > 0:
-        reason = result.get('FailureReason', "")
-        raise RuntimeError(
-            f"Failed STOW-RS uploads {failed_transfers} {reason}")
-    successful_transfers = result.ReferencedSOPSequence
-    if len(successful_transfers) == 0:
-        raise RuntimeError("There were no successful transfers")
+        ds.save_as(buffer, write_like_original=False)
+        buffer.seek(0)
 
-    elif len(successful_transfers) != 1:
-        raise RuntimeError(
-            f"Expected only one transfer, not {len(successful_transfers)}"
-        )
-    sop_instance_uid = successful_transfers[0].ReferencedSOPInstanceUID
+        content = buffer.read()
+        body += bytearray("--%s\r\n" % boundary, "ascii")
+        body += bytearray("Content-Length: %d\r\n" % len(content), "ascii")
+        body += bytearray("Content-Type: application/dicom\r\n\r\n", "ascii")
+        body += content
+        body += bytearray("\r\n", "ascii")
+        body += bytearray("--%s--" % boundary, "ascii")
 
+        headers = {
+            "Content-Type": "multipart/related; type=application/dicom; boundary=%s"
+            % boundary,
+            "Accept": "application/json",
+        }
+
+        def gen():
+            chunkSize = 1024 * 1024
+
+            l = len(body) // chunkSize
+            for i in range(l):
+                pos = i * chunkSize
+                yield body[pos: pos + chunkSize]
+
+            if len(body) % chunkSize != 0:
+                yield body[l * chunkSize:]
+
+        response = requests.post(dicomweb_url, data=gen(), headers=headers)
+        if response.status_code != 200:
+            logger.error(f'Upload to {dicomweb_url} failed {response.status_code} {response.reason} {response.text}')
+            raise RuntimeError("Upload failed")
+        else:
+            return response.json()
+
+
+def extract_sop_instance_from_response(response: Dict):
+    """Returns the uploaded SOPInstanceUID from the server response.
+
+    Assumes there is only one SOPInstanceUID in the upload.
+
+    Args:
+        response (Dict): JSON dictionary from server response.
+
+    Returns:
+        str: DICOM SOPInstanceUID of upload
+    """
+    referenced_sop_sequence = response[DICOM_REFERENCED_SOP_SEQUENCE_TAG]['Value']
+    referenced_sop_instance_uid = referenced_sop_sequence[0][DICOM_REFERENCED_SOP_INSTANCE_UID_TAG]
+    sop_instance_uid = referenced_sop_instance_uid['Value'][0]
     return sop_instance_uid
-
 
 def read_dcm_from_memory(in_memory_file: BufferedRandom) -> Dataset:
     """Returns a pydicom Dataset from an in-memory buffer.
@@ -155,12 +186,14 @@ def lambda_handler(event, context):
 
         if is_carepmr_image(ds):
             logger.info("Match - this is a CarePMR study")
-            result = upload_dicom(ds, DICOM_WEB_URL)
-            if not result:
+            response = upload_dicom(ds, DICOM_WEB_URL)
+            if not response:
                 logger.error("upload_dicom failed")
                 return None
             else:
-                return {'SOPInstanceUID': result}
+                sop_instance = extract_sop_instance_from_response(response)
+                logger.info(f'Uploaded {sop_instance}')
+                return {"SOPInstanceUID": sop_instance}
         else:
             logger.info("This is not a CarePMR study")
             return None
@@ -169,23 +202,83 @@ def lambda_handler(event, context):
         logger.exception(e)
         bucket = event["Records"][0]["s3"]["bucket"]["name"]
         key = urllib.parse.unquote_plus(
-            event["Records"][0]["s3"]["object"]["key"], encoding="utf-8")
+            event["Records"][0]["s3"]["object"]["key"], encoding="utf-8"
+        )
         logger.error(
-            "Error uploading object {} from bucket {} to PACS.".format(
-                key, bucket
-            )
+            "Error uploading object {} from bucket {} to PACS.".format(key, bucket)
         )
         raise e
     return None
 
 
-if __name__ == "__main__":  # For testing only
-    configure_logging(4)
-    token = get_token()
+if __name__ == "__main__":  # For local testing only
+
     filename = "tests/data/2.25.127421887010676750942174422891255180378.dcm"
-    #filename = "tests/data/1.3.6.1.4.1.5962.99.1.2256093408.737520867.1651523567840.64.0.dcm"
+    filename = "case8_t2.dcm"
+    # filename = "tests/data/1.3.6.1.4.1.5962.99.1.2256093408.737520867.1651523567840.64.0.dcm"
     ds = dcmread(filename)
-    server_url = "https://pacs-server.dev-sean.hyperfine-research-dev.com/pacs/dicom-web"
-    #server_url = "http://127.0.0.1/pacs/dicom-web"
-    status = upload_dicom(ds, server_url, token)
-    print(status)
+    # server_url = "https://pacs-server.dev-sean.hyperfine-research-dev.com/pacs/dicom-web"
+    server_url = "http://127.0.0.1/pacs/dicom-web/studies"
+    response = upload_dicom(ds, server_url)
+    sop_instance = extract_sop_instance_from_response(response)
+    print(f'sop_instance {sop_instance}')
+
+
+
+
+# Below is a sample successful return from dicom-web STOW-RS request.
+# {
+#         "00080005" :
+#         {
+#                 "Value" :
+#                 [
+#                         "ISO_IR 100"
+#                 ],
+#                 "vr" : "CS"
+#         },
+#         "00081190" :
+#         {
+#                 "Value" :
+#                 [
+#                         "http://127.0.0.1/dicom-web/studies/1.2.826.0.1.3680043.8.498.12023435223600644165424944494788319417"
+#                 ],
+#                 "vr" : "UR"
+#         },
+#         "00081198" :
+#         {
+#                 "vr" : "SQ"
+#         },
+#         "00081199" :
+#         {
+#                 "Value" :
+#                 [
+#                         {
+#                                 "00081150" :
+#                                 {
+#                                         "Value" :
+#                                         [
+#                                                 "1.2.840.10008.5.1.4.1.1.4.1"
+#                                         ],
+#                                         "vr" : "UI"
+#                                 },
+#                                 "00081155" :
+#                                 {
+#                                         "Value" :
+#                                         [
+#                                                 "1.2.826.0.1.3680043.8.498.59223928071708804422539823962057641315"
+#                                         ],
+#                                         "vr" : "UI"
+#                                 },
+#                                 "00081190" :
+#                                 {
+#                                         "Value" :
+#                                         [
+#                                                 "http://127.0.0.1/dicom-web/studies/1.2.826.0.1.3680043.8.498.12023435223600644165424944494788319417/series/1.2.826.0.1.3680043.8.498.11114089250946458457808303676827847028/instances/1.2.826.0.1.3680043.8.498.59223928071708804422539823962057641315"
+#                                         ],
+#                                         "vr" : "UR"
+#                                 }
+#                         }
+#                 ],
+#                 "vr" : "SQ"
+#         }
+# }
