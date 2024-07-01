@@ -32,6 +32,8 @@ WORKDIR /usr/src/app
 # that the Docker ignore file at the root (i.e. ./dockerignore) will filter
 # out files and directories that are not needed.
 COPY ./ /usr/src/app/
+COPY ./hyperfine/config/docker_openresty-orthanc-carepmr.js ./platform/app/public/config/
+COPY ./hyperfine/assets/hyperfine-icon.svg ./platform/app/public/assets/
 
 # For arm builds since parcel doesn't have prebuilt binaries for arm yet
 RUN apt-get update && apt-get install -y build-essential python3

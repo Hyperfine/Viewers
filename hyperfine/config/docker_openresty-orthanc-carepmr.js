@@ -17,6 +17,7 @@ window.config = {
       );
     },
   },
+
   // below flag is for performance reasons, but it might not work for all servers
 
   showWarningMessageForCrossOrigin: true,
@@ -45,6 +46,14 @@ window.config = {
         bulkDataURI: {
           enabled: true,
         },
+      },
+    },
+    {
+      namespace: '@ohif/extension-default.dataSourcesModule.dicomwebproxy',
+      sourceName: 'dicomwebproxy',
+      configuration: {
+        friendlyName: 'dicomweb delegating proxy',
+        name: 'dicomwebproxy',
       },
     },
     {
